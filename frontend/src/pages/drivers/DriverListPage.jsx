@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
-import { Plus, ShieldAlert, Award } from 'lucide-react';
+import { Plus, ShieldAlert, Award, Calendar, AlertCircle } from 'lucide-react';
+
 export default function DriverListPage() {
   const [drivers, setDrivers] = useState([]);
   const [showModal, setShowModal] = useState(false);
@@ -8,28 +9,46 @@ export default function DriverListPage() {
   const [error, setError] = useState('');
 
   const fetchDrivers = async () => {
-    const res = await api.get('/drivers');
-    setDrivers(res.data);
+    try {
+      const res = await api.get('/drivers');
+      setDrivers(res.data);
+    } catch (err) {
+      console.error(err);
+    }
   };
+
   useEffect(() => {
     fetchDrivers();
   }, []);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     const expiry = new Date(formData.licenseExpiryDate);
     if (expiry <= new Date()) {
-      setError("Cannot register drivers with expired licenses.");
+      setError("Cannot register drivers with expired driving licenses.");
       return;
     }
     try {
-  await api.post('/drivers', formData);
-  setShowModal(false);
-  fetchDrivers();
+      await api.post('/drivers', formData);
+      setShowModal(false);
+      fetchDrivers();
       setFormData({ name: '', licenseNumber: '', licenseCategory: '', licenseExpiryDate: '', contactNumber: '' });
     } catch (err) {
-      setError(err.response?.data?.message || 'License number must be unique.');
+      setError(err.response?.data?.message || 'Driving License Number must be unique.');
     }
+  };
+
+  // Helper: check if license expires within 30 days
+  const getLicenseWarning = (dateStr) => {
+    const expiry = new Date(dateStr);
+    const today = new Date();
+    const diffTime = expiry - today;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays <= 0) return { isExpired: true, text: 'Expired' };
+    if (diffDays <= 30) return { isExpiringSoon: true, text: `Expiring in ${diffDays} days` };
+    return null;
   };
 
   return (
@@ -37,14 +56,14 @@ export default function DriverListPage() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-extrabold tracking-tight dark:text-white">Driver Roster</h1>
-          <p className="text-gray-500">Manage drivers and check compliance ratings</p>
+          <p className="text-gray-500">Monitor driver profiles, safety rankings, and licensing compliance</p>
         </div>
         <button onClick={() => setShowModal(true)} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-5 rounded-2xl shadow-lg shadow-blue-500/10">
           <Plus className="w-5 h-5" /> Add Driver
         </button>
       </div>
 
-      <div className="bg-white dark:bg-slate-800 rounded-3xl border dark:border-slate-700/60 overflow-hidden">
+      <div className="bg-white dark:bg-slate-800 rounded-3xl border dark:border-slate-700/60 overflow-hidden shadow-sm">
         <table className="w-full text-left">
           <thead>
             <tr className="border-b dark:border-slate-700 uppercase tracking-wider text-xs font-semibold text-gray-400 bg-gray-50 dark:bg-slate-900/30">
@@ -59,16 +78,35 @@ export default function DriverListPage() {
           </thead>
           <tbody className="divide-y divide-gray-100 dark:divide-slate-700/60 text-sm">
             {drivers.map((d) => {
-              const isExpired = new Date(d.licenseExpiryDate) < new Date();
+              const warning = getLicenseWarning(d.licenseExpiryDate);
               return (
-                <tr key={d.id} className="text-gray-700 dark:text-gray-200">
+                <tr key={d.id} className="text-gray-700 dark:text-gray-200 hover:bg-slate-50/50 dark:hover:bg-slate-700/20">
                   <td className="px-6 py-4 font-medium">{d.name}</td>
                   <td className="px-6 py-4 font-mono font-semibold">{d.licenseNumber}</td>
                   <td className="px-6 py-4">{d.licenseCategory}</td>
-                  <td className={`px-6 py-4 font-medium ${isExpired ? 'text-red-500' : ''}`}>{d.licenseExpiryDate}</td>
+                  <td className="px-6 py-4">
+                    <div className="flex flex-col">
+                      <span className={`font-medium ${warning?.isExpired ? 'text-red-500 font-bold' : ''}`}>
+                        {d.licenseExpiryDate}
+                      </span>
+                      {warning && (
+                        <span className={`text-[10px] font-bold flex items-center gap-1 mt-0.5 ${
+                          warning.isExpired ? 'text-red-500' : 'text-amber-500'
+                        }`}>
+                          <AlertCircle className="w-3 h-3" /> {warning.text}
+                        </span>
+                      )}
+                    </div>
+                  </td>
                   <td className="px-6 py-4">{d.contactNumber}</td>
                   <td className="px-6 py-4">
-                    <span className="flex items-center gap-1 font-bold text-gray-900 dark:text-white"><Award className="w-4 h-4 text-amber-500" />{d.safetyScore}</span>
+                    <span className="flex items-center gap-1 font-bold text-gray-900 dark:text-white">
+                      <Award className={`w-4 h-4 ${
+                        d.safetyScore >= 85 ? 'text-emerald-500' : 
+                        d.safetyScore >= 60 ? 'text-amber-500' : 'text-red-500'
+                      }`} />
+                      {d.safetyScore}
+                    </span>
                   </td>
                   <td className="px-6 py-4">
                     <span className={`px-3 py-1 rounded-full text-xs font-bold ${
@@ -91,7 +129,7 @@ export default function DriverListPage() {
 
             <input placeholder="Full Name" required value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="w-full border dark:border-slate-700 bg-transparent rounded-2xl p-3 text-sm focus:outline-none dark:text-white" />
             <input placeholder="License Number" required value={formData.licenseNumber} onChange={(e) => setFormData({...formData, licenseNumber: e.target.value})} className="w-full border dark:border-slate-700 bg-transparent rounded-2xl p-3 text-sm focus:outline-none dark:text-white" />
-            <input placeholder="License Category (e.g. Heavy Truck)" required value={formData.licenseCategory} onChange={(e) => setFormData({...formData, licenseCategory: e.target.value})} className="w-full border dark:border-slate-700 bg-transparent rounded-2xl p-3 text-sm focus:outline-none dark:text-white" />
+            <input placeholder="License Category" required value={formData.licenseCategory} onChange={(e) => setFormData({...formData, licenseCategory: e.target.value})} className="w-full border dark:border-slate-700 bg-transparent rounded-2xl p-3 text-sm focus:outline-none dark:text-white" />
             <input placeholder="Expiry Date" type="date" required value={formData.licenseExpiryDate} onChange={(e) => setFormData({...formData, licenseExpiryDate: e.target.value})} className="w-full border dark:border-slate-700 bg-transparent rounded-2xl p-3 text-sm focus:outline-none dark:text-white" />
             <input placeholder="Contact Number" required value={formData.contactNumber} onChange={(e) => setFormData({...formData, contactNumber: e.target.value})} className="w-full border dark:border-slate-700 bg-transparent rounded-2xl p-3 text-sm focus:outline-none dark:text-white" />
 
@@ -105,49 +143,6 @@ export default function DriverListPage() {
     </div>
   );
 }
-import React, { useState } from 'react';
-import { UserPlus, Search, AlertTriangle, ShieldCheck, FileText, Phone, Mail, Clock } from 'lucide-react';
-
-const INITIAL_DRIVERS = [
-  { id: 1, name: 'Marcus Vance', licenseNo: 'DL-98765432', status: 'Active', renewalDate: '2026-11-14', phone: '+1 (555) 234-5678', email: 'm.vance@transitops.com', healthStatus: 'Fit' },
-  { id: 2, name: 'Sarah Jenkins', licenseNo: 'DL-45612378', status: 'On Trip', renewalDate: '2026-08-02', phone: '+1 (555) 876-5432', email: 's.jenkins@transitops.com', healthStatus: 'Fit' },
-  { id: 3, name: 'David Kojo', licenseNo: 'DL-11223344', status: 'Suspended', renewalDate: '2026-02-15', phone: '+1 (555) 345-6789', email: 'd.kojo@transitops.com', healthStatus: 'Pending Review' },
-  { id: 4, name: 'Elena Rostova', licenseNo: 'DL-77665544', status: 'Active', renewalDate: '2026-07-28', phone: '+1 (555) 901-2345', email: 'e.rostova@transitops.com', healthStatus: 'Fit' },
-];
-
-export default function DriverListPage() {
-  const [drivers, setDrivers] = useState(INITIAL_DRIVERS);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [newDriver, setNewDriver] = useState({ name: '', licenseNo: '', phone: '', email: '', renewalDate: '' });
-
-  const isExpiringSoon = (dateStr) => {
-    const renewal = new Date(dateStr);
-    const today = new Date('2026-07-12');
-    const diffTime = renewal - today;
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays >= 0 && diffDays <= 30;
-  };
-
-  const handleCreateDriver = (e) => {
-    e.preventDefault();
-    const created = { ...newDriver, id: Date.now(), status: 'Active', healthStatus: 'Fit' };
-    setDrivers([created, ...drivers]);
-    setIsModalOpen(false);
-    setNewDriver({ name: '', licenseNo: '', phone: '', email: '', renewalDate: '' });
-  };
-
-  const filteredDrivers = drivers.filter(d => 
-    d.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    d.licenseNo.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Driver Management</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400">Manage personnel rosters, track compliance, and monitor license status.</p>
         </div>
         <button onClick={() => setIsModalOpen(true)} className="inline-flex items-center gap-2 px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-lg font-medium transition-colors">
           <UserPlus size={18} /> Onboard Driver

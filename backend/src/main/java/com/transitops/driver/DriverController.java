@@ -11,7 +11,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
 import java.util.List;
 
 @RestController
@@ -25,34 +24,29 @@ public class DriverController {
     }
 
     @GetMapping
-    public List<Driver> getDrivers(@RequestParam(required = false) String query) {
-        return driverService.searchDrivers(query);
+    public ResponseEntity<List<Driver>> getDrivers(@RequestParam(required = false) String query) {
+        return ResponseEntity.ok(driverService.searchDrivers(query));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<Driver> getDriverById(@PathVariable Long id) {
-        return driverService.getDriverById(id)
-                .map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.notFound().build());
+        return ResponseEntity.ok(driverService.getDriverById(id));
     }
 
     @PostMapping
     public ResponseEntity<Driver> createDriver(@RequestBody Driver driver) {
-        Driver created = driverService.createDriver(driver);
+        Driver created = driverService.registerDriver(driver);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<Driver> updateDriver(@PathVariable Long id, @RequestBody Driver driver) {
-        return driverService.updateDriver(id, driver)
-                .map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.notFound().build());
+        return ResponseEntity.ok(driverService.updateDriver(id, driver));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteDriver(@PathVariable Long id) {
-        return driverService.deleteDriver(id)
-                ? ResponseEntity.noContent().build()
-                : ResponseEntity.notFound().build();
+        driverService.deleteDriver(id);
+        return ResponseEntity.noContent().build();
     }
 }

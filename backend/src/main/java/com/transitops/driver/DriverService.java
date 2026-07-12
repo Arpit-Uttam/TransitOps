@@ -63,4 +63,16 @@ public class DriverService {
 
         return driverRepository.save(driver);
     }
+
+    public List<Driver> searchDrivers(String query) {
+        if (query == null || query.isBlank()) {
+            return driverRepository.findAll();
+        }
+        return driverRepository.findByNameContainingIgnoreCaseOrLicenseNumberContainingIgnoreCase(query, query);
+    }
+
+    public void deleteDriver(Long id) {
+        Driver driver = getDriverById(id);
+        driverRepository.delete(driver);
+    }
 }

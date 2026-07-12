@@ -29,6 +29,15 @@ public class TripService {
         return tripRepository.findAll().stream().toList();
     }
 
+    public List<Trip> searchTrips(String query) {
+        if (query == null || query.isBlank()) {
+            return tripRepository.findAll();
+        }
+        return tripRepository.findBySourceContainingIgnoreCaseOrDestinationContainingIgnoreCaseOrDriverNameContainingIgnoreCaseOrVehicleRegistrationNumberContainingIgnoreCase(
+                query, query, query, query
+        );
+    }
+
     public Trip getTripById(Long id) {
         return tripRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Trip not found with ID: " + id));

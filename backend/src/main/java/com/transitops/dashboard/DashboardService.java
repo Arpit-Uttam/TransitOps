@@ -8,7 +8,6 @@ import com.transitops.vehicle.VehicleRepository;
 import com.transitops.vehicle.VehicleStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-
 import java.util.HashMap;
 import java.util.Map;
 
@@ -20,18 +19,35 @@ public class DashboardService {
     private final TripRepository tripRepository;
 
     public Map<String, Object> calculateKpis(String vehicleType, String status, String region) {
-        long totalVehicles = vehicleRepository.count();
-        long activeVehicles = vehicleRepository.findAll().stream()
+        var vehicles = vehicleRepository.findAll().stream()
+                .filter(v -> (vehicleType == null || vehicleType.isBlank() || v.getType().equalsIgnoreCase(vehicleType)))
+                .filter(v -> (status == null || status.isBlank() || v.getStatus().name().equalsIgnoreCase(status)))
+                .filter(v -> (region == null || region.isBlank() || v.getRegion().equalsIgnoreCase(region)))
+                .toList();
+
+        long totalVehicles = vehicles.size();
+        long activeVehicles = vehicles.stream()
                 .filter(v -> v.getStatus() == VehicleStatus.On_Trip).count();
-        long availableVehicles = vehicleRepository.findAll().stream()
+        long availableVehicles = vehicles.stream()
                 .filter(v -> v.getStatus() == VehicleStatus.Available).count();
-        long inMaintenance = vehicleRepository.findAll().stream()
+        long inMaintenance = vehicles.stream()
                 .filter(v -> v.getStatus() == VehicleStatus.In_Shop).count();
-        long activeTrips = tripRepository.findAll().stream()
+
+        var trips = tripRepository.findAll().stream()
+                .filter(t -> (vehicleType == null || vehicleType.isBlank() || t.getVehicle().getType().equalsIgnoreCase(vehicleType)))
+                .filter(t -> (region == null || region.isBlank() || t.getVehicle().getRegion().equalsIgnoreCase(region)))
+                .toList();
+
+        long activeTrips = trips.stream()
                 .filter(t -> t.getStatus() == TripStatus.Dispatched).count();
-        long pendingTrips = tripRepository.findAll().stream()
+        long pendingTrips = trips.stream()
                 .filter(t -> t.getStatus() == TripStatus.Draft).count();
-        long driversOnDuty = driverRepository.findAll().stream()
+
+        var drivers = driverRepository.findAll().stream()
+                .filter(d -> (status == null || status.isBlank() || d.getStatus().name().equalsIgnoreCase(status)))
+                .toList();
+
+        long driversOnDuty = drivers.stream()
                 .filter(d -> d.getStatus() == DriverStatus.Available || d.getStatus() == DriverStatus.On_Trip).count();
         double fleetUtilization = totalVehicles == 0 ? 0.0 : ((double) activeVehicles / totalVehicles) * 100.0;
 

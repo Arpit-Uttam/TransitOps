@@ -1,40 +1,64 @@
 package com.transitops.driver;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import java.time.LocalDate;
 
 @Entity
 @Table(name = "drivers")
 public class Driver {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @NotBlank
+    @Column(nullable = false)
     private String name;
-    private String licenseNo;
-    private String phone;
-    private String email;
-    private String renewalDate;
-    private DriverStatus status;
-    private String healthStatus;
+
+    @NotBlank
+    @Column(name = "license_number", unique = true, nullable = false)
+    private String licenseNumber;
+
+    @NotBlank
+    @Column(name = "license_category", nullable = false)
+    private String licenseCategory;
+
+    @NotNull
+    @Column(name = "license_expiry_date", nullable = false)
+    private LocalDate licenseExpiryDate;
+
+    @NotBlank
+    @Column(name = "contact_number", nullable = false)
+    private String contactNumber;
+
+    @Column(name = "safety_score")
+    private Double safetyScore = 100.0;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private DriverStatus status = DriverStatus.Available;
 
     public Driver() {
     }
 
-    public Driver(Long id, String name, String licenseNo, String phone, String email,
-                  String renewalDate, DriverStatus status, String healthStatus) {
+    public Driver(Long id, String name, String licenseNumber, String licenseCategory,
+                  LocalDate licenseExpiryDate, String contactNumber, Double safetyScore, DriverStatus status) {
         this.id = id;
         this.name = name;
-        this.licenseNo = licenseNo;
-        this.phone = phone;
-        this.email = email;
-        this.renewalDate = renewalDate;
+        this.licenseNumber = licenseNumber;
+        this.licenseCategory = licenseCategory;
+        this.licenseExpiryDate = licenseExpiryDate;
+        this.contactNumber = contactNumber;
+        this.safetyScore = safetyScore;
         this.status = status;
-        this.healthStatus = healthStatus;
     }
 
     public Long getId() {
@@ -53,36 +77,44 @@ public class Driver {
         this.name = name;
     }
 
-    public String getLicenseNo() {
-        return licenseNo;
+    public String getLicenseNumber() {
+        return licenseNumber;
     }
 
-    public void setLicenseNo(String licenseNo) {
-        this.licenseNo = licenseNo;
+    public void setLicenseNumber(String licenseNumber) {
+        this.licenseNumber = licenseNumber;
     }
 
-    public String getPhone() {
-        return phone;
+    public String getLicenseCategory() {
+        return licenseCategory;
     }
 
-    public void setPhone(String phone) {
-        this.phone = phone;
+    public void setLicenseCategory(String licenseCategory) {
+        this.licenseCategory = licenseCategory;
     }
 
-    public String getEmail() {
-        return email;
+    public LocalDate getLicenseExpiryDate() {
+        return licenseExpiryDate;
     }
 
-    public void setEmail(String email) {
-        this.email = email;
+    public void setLicenseExpiryDate(LocalDate licenseExpiryDate) {
+        this.licenseExpiryDate = licenseExpiryDate;
     }
 
-    public String getRenewalDate() {
-        return renewalDate;
+    public String getContactNumber() {
+        return contactNumber;
     }
 
-    public void setRenewalDate(String renewalDate) {
-        this.renewalDate = renewalDate;
+    public void setContactNumber(String contactNumber) {
+        this.contactNumber = contactNumber;
+    }
+
+    public Double getSafetyScore() {
+        return safetyScore;
+    }
+
+    public void setSafetyScore(Double safetyScore) {
+        this.safetyScore = safetyScore;
     }
 
     public DriverStatus getStatus() {
@@ -91,13 +123,5 @@ public class Driver {
 
     public void setStatus(DriverStatus status) {
         this.status = status;
-    }
-
-    public String getHealthStatus() {
-        return healthStatus;
-    }
-
-    public void setHealthStatus(String healthStatus) {
-        this.healthStatus = healthStatus;
     }
 }

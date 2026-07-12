@@ -1,10 +1,7 @@
 package com.transitops.driver;
 
 import org.springframework.stereotype.Service;
-
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class DriverService {
@@ -15,49 +12,55 @@ public class DriverService {
         this.driverRepository = driverRepository;
     }
 
-    public List<Driver> listDrivers() {
-        List<Driver> drivers = new ArrayList<>();
-        driverRepository.findAll().forEach(drivers::add);
-        return drivers;
+    public List<Driver> getAllDrivers() {
+        return driverRepository.findAll();
     }
 
-    public Optional<Driver> getDriverById(Long id) {
-        return driverRepository.findById(id);
+    public Driver getDriverById(Long id) {
+        return driverRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Driver ID not found: " + id));
     }
 
-    public Driver createDriver(Driver driver) {
+    public Driver registerDriver(Driver driver) {
+        if (driverRepository.existsByLicenseNumber(driver.getLicenseNumber())) {
+            throw new IllegalArgumentException("Driving License Number must be unique!");
+        }
+        driver.setStatus(DriverStatus.Available);
+        driver.setSafetyScore(100.0);
         return driverRepository.save(driver);
     }
 
-    public Optional<Driver> updateDriver(Long id, Driver updatedDriver) {
-        return driverRepository.findById(id).map(existing -> {
-            existing.setName(updatedDriver.getName());
-            existing.setLicenseNo(updatedDriver.getLicenseNo());
-            existing.setPhone(updatedDriver.getPhone());
-            existing.setEmail(updatedDriver.getEmail());
-            existing.setRenewalDate(updatedDriver.getRenewalDate());
-            existing.setStatus(updatedDriver.getStatus());
-            existing.setHealthStatus(updatedDriver.getHealthStatus());
-            return driverRepository.save(existing);
-        });
-    }
+    public Driver updateDriver(Long id, Driver details) {
+        Driver driver = getDriverById(id);
 
-    public boolean deleteDriver(Long id) {
-        if (driverRepository.existsById(id)) {
-            driverRepository.deleteById(id);
-            return true;
-        }
-        return false;
-    }
-
-    public List<Driver> searchDrivers(String query) {
-        if (query == null || query.isBlank()) {
-            return listDrivers();
+        if (details.getLicenseNumber() != null && !driver.getLicenseNumber().equalsIgnoreCase(details.getLicenseNumber())) {
+            if (driverRepository.existsByLicenseNumber(details.getLicenseNumber())) {
+                throw new IllegalArgumentException("Driving License is already registered!");
+            }
         }
 
-        List<Driver> results = new ArrayList<>();
-        results.addAll(driverRepository.findByNameContainingIgnoreCase(query));
-        results.addAll(driverRepository.findByLicenseNoContainingIgnoreCase(query));
-        return results.stream().distinct().toList();
+        if (details.getName() != null) {
+            driver.setName(details.getName());
+        }
+        if (details.getLicenseNumber() != null) {
+            driver.setLicenseNumber(details.getLicenseNumber());
+        }
+        if (details.getLicenseCategory() != null) {
+            driver.setLicenseCategory(details.getLicenseCategory());
+        }
+        if (details.getLicenseExpiryDate() != null) {
+            driver.setLicenseExpiryDate(details.getLicenseExpiryDate());
+        }
+        if (details.getContactNumber() != null) {
+            driver.setContactNumber(details.getContactNumber());
+        }
+        if (details.getStatus() != null) {
+            driver.setStatus(details.getStatus());
+        }
+        if (details.getSafetyScore() != null) {
+            driver.setSafetyScore(details.getSafetyScore());
+        }
+
+        return driverRepository.save(driver);
     }
 }

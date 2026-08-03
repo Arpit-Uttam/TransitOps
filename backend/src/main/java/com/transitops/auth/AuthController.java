@@ -1,6 +1,6 @@
 package com.transitops.auth;
 
-import com.transitops.auth.security.JwtTokenProvider;
+import com.transitops.config.JwtTokenProvider;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

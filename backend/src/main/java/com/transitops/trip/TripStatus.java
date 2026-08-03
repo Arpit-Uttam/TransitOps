@@ -1,8 +1,8 @@
 package com.transitops.trip;
 
 public enum TripStatus {
-    DISPATCHED,
-    IN_TRANSIT,
-    COMPLETED,
-    CANCELLED
+    Draft,
+    Dispatched,
+    Completed,
+    Cancelled
 }

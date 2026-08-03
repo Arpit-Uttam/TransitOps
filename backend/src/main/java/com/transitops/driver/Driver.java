@@ -11,9 +11,13 @@ import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDate;
+import lombok.Builder;
+import lombok.Data;
 
 @Entity
 @Table(name = "drivers")
+@Data
+@Builder
 public class Driver {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

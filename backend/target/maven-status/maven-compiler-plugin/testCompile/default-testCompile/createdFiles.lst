@@ -1,5 +1,0 @@
-com\transitops\auth\AuthControllerTest.class
-com\transitops\TransitOpsApplicationTest.class
-com\transitops\trip\TripServiceTest.class
-com\transitops\report\ReportServiceTest.class
-com\transitops\vehicle\VehicleServiceTest.class
